@@ -1,14 +1,14 @@
 import strutils
 
-proc calculateMass(M: int): int =
-  let F = (M div 3) - 2
-  if F > 0:
-    result = F + calculateMass(F)
-  else:
-    result = 0
+proc calculateFuel(M: int): int =
+  result = 0
+  var F = (M div 3) - 2
+  while F > 0:
+    result += F
+    F = (F div 3) - 2
 
 template `->`(lhs: untyped, rhs: untyped): untyped =
-  calculateMass(lhs) == rhs
+  calculateFuel(lhs) == rhs
 
 when isMainModule:
   var
@@ -22,7 +22,7 @@ when isMainModule:
 
   if open(f, "day1.txt"):
     while f.readLine(line):
-      sum += calculateMass(parseInt(line))
+      sum += calculateFuel(parseInt(line))
 
     echo(sum)
   else:
