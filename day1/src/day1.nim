@@ -2,30 +2,35 @@ import os
 import bignum
 import threadpool
 import cpuinfo
+#import nimprof
 
 type
-  WorkerResult = seq[Int]
+  WorkerResult {.shallow.} = seq[Int]
   WorkerResultFlow = FlowVar[WorkerResult]
-  InputList = seq[string]
+  InputList {.shallow.} = seq[string]
   IndexRange = tuple[first: int, last: int]
 
 let NUM_CPU = if countProcessors() > 0: countProcessors() else: 2
 
-proc calculateFuel(M: string): (Int, Int) =
+proc calculateFuel(M: string): (Int, Int) {.noSideEffect.} =
   var sum = newInt()
-  let I = (newInt(M) div 3) - 2
+  let three = newInt(3)
+  let two = newInt(2)
+  let zero = newInt(0)
+  let I = (newInt(M) div three) - two
   var F = I
-  while F > 0:
+  while F > zero:
+    {.unroll: 8.}
     sum += F
-    F = (F div 3) - 2
+    F = (F div three) - two
   result = (I, sum)
 
-proc distribute(numCPU: int, totalLoad: int, idxCPU: int): IndexRange =
+proc distribute(numCPU: int, totalLoad: int, idxCPU: int): IndexRange {.noSideEffect.} =
   let coreLoad = totalLoad div numCPU
   if idxCPU < numCPU - 1:
     result = (idxCPU * coreLoad, idxCPU * coreLoad + coreLoad - 1)
   else:
-    result = (idxCPU * coreLoad, idxCPU * coreLoad + coreLoad + (totalLoad mod numCPU) - 1) 
+    result = (idxCPU * coreLoad, idxCPU * coreLoad + coreLoad + (totalLoad mod numCPU) - 1)
 
 proc worker(work: InputList, N: int, idx: int): seq[Int] =
   var sum1 = newInt()
