@@ -2,6 +2,7 @@ import os
 import bignum
 import threadpool
 import cpuinfo
+import aocutils
 #import nimprof
 
 type
@@ -25,18 +26,11 @@ proc calculateFuel(M: string): (Int, Int) {.noSideEffect.} =
     F = (F div three) - two
   result = (I, sum)
 
-proc distribute(numCPU: int, totalLoad: int, idxCPU: int): IndexRange {.noSideEffect.} =
-  let coreLoad = totalLoad div numCPU
-  if idxCPU < numCPU - 1:
-    result = (idxCPU * coreLoad, idxCPU * coreLoad + coreLoad - 1)
-  else:
-    result = (idxCPU * coreLoad, idxCPU * coreLoad + coreLoad + (totalLoad mod numCPU) - 1)
-
-proc worker(work: InputList, N: int, idx: int): seq[Int] =
+proc worker(work: InputList, first: int, last: int): seq[Int] =
   var sum1 = newInt()
   var sum2 = newInt()
-  let param = distribute(NUM_CPU, N, idx)
-  for i in param.first..param.last:
+
+  for i in first .. last:
     let res = calculateFuel(work[i])
     sum1 += res[0]
     sum2 += res[1]
@@ -55,18 +49,13 @@ when isMainModule:
     var inputString: InputList
     while f.readLine(line):
       inputString.add(line)
-
-    let N = len(inputString)
     echo("Input OK")
-    var res: seq[WorkerResultFlow]
-    
-    for i in 0..NUM_CPU-1:
-      res.add(spawn worker(inputString, N, i))
+
+    let res = distributeWork(worker, inputString)
 
     for r in res:
-      let ru = ^r
-      sum1 += ru[0]
-      sum2 += ru[1]
+      sum1 += r[0]
+      sum2 += r[1]
     echo((sum1, sum2))
   else:
     echo("IO error")

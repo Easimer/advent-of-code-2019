@@ -13,3 +13,4 @@ backend       = "cpp"
 
 requires "nim >= 1.0.0"
 requires "bignum >= 1.0.4"
+requires "aocutils >= 0.1.0"
