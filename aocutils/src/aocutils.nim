@@ -1,10 +1,25 @@
 import cpuinfo
 import threadpool
+import json
 
 type
   WorkIndexRange* = tuple[first: int, last: int]
   WorkerFunc [TIn, TOut] = (proc(work: openArray[TIn], first: int, last: int): TOut)
+  AOCResults* = object
+    output1: string
+    output2: string
+    unitTime: string
+    timePreprocess: float
+    timePart1: float
+    timePart2: float
 
+proc init*(R: var AOCResults, output1: string, output2: string, timePreprocess: float, timePart1: float, timePart2: float) =
+  R.output1 = output1
+  R.output2 = output2
+  R.timePreprocess = timePreprocess
+  R.timePart1 = timePart1
+  R.timePart2 = timePart2
+  R.unitTime = "us"
 
 proc distributeWorkIndices(numCPU: int, totalLoad: int, idxCPU: int): WorkIndexRange {.noSideEffect.} =
   let coreLoad = totalLoad div numCPU
@@ -40,3 +55,6 @@ proc distributeWork*[TIn, TOut](procWorker: (proc(work: TIn, first: int, last: i
 
   for future in futures:
     result.add(^future)
+
+proc printResults*(results: AOCResults) =
+  echo(%*results)

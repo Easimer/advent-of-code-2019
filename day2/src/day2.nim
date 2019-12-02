@@ -65,6 +65,7 @@ proc worker(work: WorkDay2, first: int, last: int): Option[(int, int)] =
         break
 
 when isMainModule:
+  var output2: string
   var f = open("input.txt")
   var program: seq[int]
   
@@ -76,10 +77,8 @@ when isMainModule:
   let parseEnd = cpuTime()
 
   let part1Start = cpuTime()
-  echo("Part 1: " & $(runWithInitialState(12, 2, program)))
+  let output1 = $(runWithInitialState(12, 2, program))
   let part1End = cpuTime()
-
-  var finished = false
 
   let part2Start = cpuTime()  
   var work: WorkDay2
@@ -87,12 +86,11 @@ when isMainModule:
   let results = distributeWork(worker, work, 0, 99)
   for result in results:
     if isSome(result):
-      echo("Part 2: " & $(get(result)))
+      output2 = $(get(result))
       break
   
   let part2End = cpuTime()
 
-  echo("=====================================")
-  echo("Parse\t"  & $((parseEnd - parseStart) * 1000) & " ms")
-  echo("Part 1\t" & $((part1End - part1Start) * 1000) & " ms")
-  echo("Part 2\t" & $((part2End - part2Start) * 1000) & " ms")
+  var R: AOCResults
+  R.init(output1, output2, (parseEnd - parseStart) * 1000 * 1000, (part1End - part1Start) * 1000 * 1000, (part2End - part2Start) * 1000 * 1000)
+  printResults(R)
