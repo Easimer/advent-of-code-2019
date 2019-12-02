@@ -15,7 +15,7 @@ def benchmarkExe(exePath, exeWD):
     timePart2 = []
     unitTime = "s"
     timeCombined = False
-    sampleCount = 32
+    sampleCount = 512
 
     print("=======================================")
     print(exePath)
