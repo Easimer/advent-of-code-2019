@@ -1,3 +1,4 @@
+import os
 import tables
 import times
 import aocutils
@@ -66,21 +67,22 @@ proc worker(work: WorkDay2, first: int, last: int): Option[(int, int)] =
 
 when isMainModule:
   var output2: string
-  var f = open("input.txt")
+  let inputPath = if paramCount() > 0: paramStr(1) else: "input.txt"
+  var f = open(inputPath)
   var program: seq[int]
   
-  let parseStart = cpuTime()
+  let parseStart = getTime()
 
   for op in integersFromFile(f):
     program.add(op)
   
-  let parseEnd = cpuTime()
+  let parseEnd = getTime()
 
-  let part1Start = cpuTime()
+  let part1Start = getTime()
   let output1 = $(runWithInitialState(12, 2, program))
-  let part1End = cpuTime()
+  let part1End = getTime()
 
-  let part2Start = cpuTime()  
+  let part2Start = getTime()
   var work: WorkDay2
   work.program = program
   let results = distributeWork(worker, work, 0, 99)
@@ -89,8 +91,8 @@ when isMainModule:
       output2 = $(get(result))
       break
   
-  let part2End = cpuTime()
+  let part2End = getTime()
 
   var R: AOCResults
-  R.init(output1, output2, (parseEnd - parseStart) * 1000 * 1000, (part1End - part1Start) * 1000 * 1000, (part2End - part2Start) * 1000 * 1000)
+  R.init(output1, output2, float inMicroseconds(parseEnd - parseStart), float inMicroseconds(part1End - part1Start), float inMicroseconds(part2End - part2Start))
   printResults(R)

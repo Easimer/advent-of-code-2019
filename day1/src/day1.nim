@@ -46,24 +46,24 @@ when isMainModule:
 
   let inputPath = if paramCount() > 0: paramStr(1) else: "day1.txt"
 
-  let parseStart = cpuTime()
+  let parseStart = getTime()
   if open(f, inputPath):
     var inputString: InputList
     while f.readLine(line):
       inputString.add(line)
-    let parseEnd = cpuTime()
+    let parseEnd = getTime()
 
-    let combinedStart = cpuTime()
+    let combinedStart = getTime()
     let res = distributeWork(worker, inputString)
 
     for r in res:
       sum1 += r[0]
       sum2 += r[1]
     
-    let combinedEnd = cpuTime()
+    let combinedEnd = getTime()
 
     var R: AOCResults
-    R.init($sum1, $sum2, (parseEnd - parseStart) * 1000 * 1000, (combinedEnd - combinedStart) * 1000 * 1000, (combinedEnd - combinedStart) * 1000 * 1000, true)
+    R.init($sum1, $sum2, float inMicroseconds(parseEnd - parseStart), float inMicroseconds(combinedEnd - combinedStart), float inMicroseconds(combinedEnd - combinedStart), true)
     printResults(R)
   else:
     echo("IO error")
