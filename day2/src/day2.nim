@@ -1,6 +1,11 @@
 import tables
 
-iterator opcodes(f: File): int =
+type
+  InterpreterResult = object
+    nextPC: int
+    halt: bool
+
+iterator integersFromFile(f: File): int =
   var buf = 0
   var c: char = '0'
 
@@ -14,18 +19,22 @@ iterator opcodes(f: File): int =
       c = f.readChar()
     buf = 0
 
-proc executeInstruction(pc: int, memory: var seq[int]): bool =
-  case memory[pc + 0]:
+template `$>`(address: untyped): untyped = memory[address]
+template `$>>`(address: untyped): untyped = $>($>(address))
+
+proc executeInstruction(pc: int, memory: var seq[int]): InterpreterResult =
+  result.halt = false
+  case $>(pc + 0):
     of 1:
-      #echo($memory[pc + 3] & " <- " & $memory[1] & " + " & $memory[pc + 2])
-      memory[memory[pc + 3]] = memory[memory[pc + 1]] + memory[memory[pc + 2]]
+      $>>(pc + 3) = $>>(pc + 1) + $>>(pc + 2)
+      result.nextPC = pc + 4
     of 2:
-      #echo($memory[pc + 3] & " <- " & $memory[pc + 1] & " * " & $memory[pc + 2])
-      memory[memory[pc + 3]] = memory[memory[pc + 1]] * memory[memory[pc + 2]]
+      $>>(pc + 3) = $>>(pc + 1) * $>>(pc + 2)
+      result.nextPC = pc + 4
     of 99:
-      result = true
+      result.halt = true
     else:
-      echo("UNKNOWN OPCODE " & $memory[0])
+      raise newException(ValueError, "Unknown opcode " & $($>(pc + 0)))
 
 proc runWithInitialState(noun, verb: int, origMemory: seq[int]): int =
   var pc = 0
@@ -34,8 +43,11 @@ proc runWithInitialState(noun, verb: int, origMemory: seq[int]): int =
   program[1] = noun
   program[2] = verb
 
-  while not executeInstruction(pc, program):
-    pc += 4
+  var ires: InterpreterResult
+
+  while not ires.halt:
+    ires = executeInstruction(pc, program)
+    pc = ires.nextPC
   
   result = program[0]
 
@@ -43,13 +55,14 @@ when isMainModule:
   var f = open("input.txt")
   var program: seq[int]
   
-  for op in opcodes(f):
+  for op in integersFromFile(f):
     program.add(op)
   
   echo("Part 1: " & $(runWithInitialState(12, 2, program)))
 
   var finished = false
 
+  # Part 2
   for noun in 0 .. 99:
     for verb in 0 .. 99:
       if runWithInitialState(noun, verb, program) == 19690720:
