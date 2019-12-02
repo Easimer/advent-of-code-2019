@@ -16,6 +16,9 @@ proc distributeWorkIndices(numCPU: int, totalLoad: int, idxCPU: int): WorkIndexR
 proc workerProxy[TIn, TOut](worker: (proc(work: seq[TIn], first: int, last: int): TOut), work: seq[TIn], first: int, last: int): TOut =
   result = worker(work, first, last)
 
+proc workerProxy[TIn, TOut](worker: (proc(work: TIn, first: int, last: int): TOut), work: TIn, first: int, last: int): TOut =
+  result = worker(work, first, last)
+
 proc distributeWork*[TIn, TOut](procWorker: (proc(work: seq[TIn], first: int, last: int): TOut), work: seq[TIn]): seq[TOut] =
   let numCPU = if countProcessors() > 0: countProcessors() else: 2
   let totalLoad = len(work)
@@ -27,3 +30,13 @@ proc distributeWork*[TIn, TOut](procWorker: (proc(work: seq[TIn], first: int, la
   for future in futures:
     result.add(^future)
 
+proc distributeWorkNoInput*[TIn, TOut](procWorker: (proc(work: TIn, first: int, last: int): TOut), work: TIn, first: int, last: int): seq[TOut] =
+  let numCPU = if countProcessors() > 0: countProcessors() else: 2
+  let totalLoad = last - first
+  var futures: seq[FlowVar[TOut]]
+  for i in 0 .. numCPU - 1:
+    let indices = distributeWorkIndices(numCPU, totalLoad, i)
+    futures.add(spawn workerProxy(procWorker, work, indices.first, indices.last))
+
+  for future in futures:
+    result.add(^future)
