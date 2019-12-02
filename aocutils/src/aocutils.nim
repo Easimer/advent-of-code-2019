@@ -10,16 +10,18 @@ type
     output2: string
     unitTime: string
     timePreprocess: float
+    isTimeCombined: bool
     timePart1: float
     timePart2: float
 
-proc init*(R: var AOCResults, output1: string, output2: string, timePreprocess: float, timePart1: float, timePart2: float) =
+proc init*(R: var AOCResults, output1: string, output2: string, timePreprocess: float, timePart1: float, timePart2: float, isTimeCombined: bool = false) =
   R.output1 = output1
   R.output2 = output2
   R.timePreprocess = timePreprocess
   R.timePart1 = timePart1
   R.timePart2 = timePart2
   R.unitTime = "us"
+  R.isTimeCombined = isTimeCombined
 
 proc distributeWorkIndices(numCPU: int, totalLoad: int, idxCPU: int): WorkIndexRange {.noSideEffect.} =
   let coreLoad = totalLoad div numCPU

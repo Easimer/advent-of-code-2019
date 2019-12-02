@@ -3,6 +3,7 @@ import bignum
 import threadpool
 import cpuinfo
 import aocutils
+import times
 #import nimprof
 
 type
@@ -45,18 +46,25 @@ when isMainModule:
 
   let inputPath = if paramCount() > 0: paramStr(1) else: "day1.txt"
 
+  let parseStart = cpuTime()
   if open(f, inputPath):
     var inputString: InputList
     while f.readLine(line):
       inputString.add(line)
-    echo("Input OK")
+    let parseEnd = cpuTime()
 
+    let combinedStart = cpuTime()
     let res = distributeWork(worker, inputString)
 
     for r in res:
       sum1 += r[0]
       sum2 += r[1]
-    echo((sum1, sum2))
+    
+    let combinedEnd = cpuTime()
+
+    var R: AOCResults
+    R.init($sum1, $sum2, (parseEnd - parseStart) * 1000 * 1000, (combinedEnd - combinedStart) * 1000 * 1000, (combinedEnd - combinedStart) * 1000 * 1000, true)
+    printResults(R)
   else:
     echo("IO error")
 
