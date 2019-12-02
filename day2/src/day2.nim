@@ -64,8 +64,6 @@ proc worker(work: WorkDay2, first: int, last: int): Option[(int, int)] =
         result = some((noun, verb))
         break
 
-proc testWorker(work: int, first: int, last: int): int = 0  
-
 when isMainModule:
   var f = open("input.txt")
   var program: seq[int]
@@ -83,17 +81,7 @@ when isMainModule:
 
   var finished = false
 
-  let part2Start = cpuTime()
-  # Part 2
-  #for noun in 0 .. 99:
-  #  for verb in 0 .. 99:
-  #    if runWithInitialState(noun, verb, program) == 19690720:
-  #      echo("Part 2: " & $(noun, verb))
-  #      finished = true
-  #      break
-    
-  #  if finished: break
-  
+  let part2Start = cpuTime()  
   var work: WorkDay2
   work.program = program
   let results = distributeWorkNoInput(worker, work, 0, 99)
