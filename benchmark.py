@@ -6,8 +6,9 @@ import os.path as path
 from statistics import mean, stdev
 
 def printStats(label, data, unit):
-        print("{}: mean {} {} stddev {} {}".format(label, mean(data), unit,
-            stdev(data), unit))
+        print("{} \033[31mmean \033[m{} {}\t\033[32mstdev \033[m{} {}".format(label,
+            round(mean(data), 4), unit,
+            round(stdev(data), 4), unit))
 
 def benchmarkExe(exePath, exeWD):
     timePreprocess = []
@@ -17,8 +18,8 @@ def benchmarkExe(exePath, exeWD):
     timeCombined = False
     sampleCount = 512
 
-    print("=======================================")
-    print(exePath)
+    print("=======================================\033[m")
+    print("\033[1m" + exePath + "\033[m")
     try:
         for i in range(sampleCount):
             proc = subprocess.run([exePath], capture_output = True, cwd = exeWD)
@@ -32,12 +33,12 @@ def benchmarkExe(exePath, exeWD):
                 timeCombined = J["isTimeCombined"]
 
         print("Sample count: {}".format(sampleCount))
-        printStats("Preprocess", timePreprocess, unitTime)
+        printStats("Preprocess:", timePreprocess, unitTime)
         if timeCombined:
-            printStats("Part 1 & 2", timePart1, unitTime)
+            printStats("Part 1 & 2:", timePart1, unitTime)
         else:
-            printStats("Part 1", timePart1, unitTime)
-            printStats("Part 2", timePart2, unitTime)
+            printStats("Part 1:    ", timePart1, unitTime)
+            printStats("Part 2:    ", timePart2, unitTime)
     except Exception as e:
         print("FAILED: " + str(e))
 
