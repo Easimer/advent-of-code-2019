@@ -84,7 +84,7 @@ when isMainModule:
   let part2Start = cpuTime()  
   var work: WorkDay2
   work.program = program
-  let results = distributeWorkNoInput(worker, work, 0, 99)
+  let results = distributeWork(worker, work, 0, 99)
   for result in results:
     if isSome(result):
       echo("Part 2: " & $(get(result)))

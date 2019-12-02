@@ -30,7 +30,7 @@ proc distributeWork*[TIn, TOut](procWorker: (proc(work: seq[TIn], first: int, la
   for future in futures:
     result.add(^future)
 
-proc distributeWorkNoInput*[TIn, TOut](procWorker: (proc(work: TIn, first: int, last: int): TOut), work: TIn, first: int, last: int): seq[TOut] =
+proc distributeWork*[TIn, TOut](procWorker: (proc(work: TIn, first: int, last: int): TOut), work: TIn, first: int, last: int): seq[TOut] =
   let numCPU = if countProcessors() > 0: countProcessors() else: 2
   let totalLoad = last - first
   var futures: seq[FlowVar[TOut]]
