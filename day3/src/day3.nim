@@ -15,6 +15,15 @@ type
   IntersectionPoint[T] = object
     P: Point[T]
     stepSum: T
+  
+  Day3Work {.byref.} = ref object
+    lhs, rhs: seq[LineSegment[int]]
+
+  Day3WorkResult = object
+    closestPoint: Point[int]
+    closestPointSteps: Point[int]
+    closestDist: int
+    closestSteps: int
 
 func newPoint[T](x, y: T): Point[T] =
   result.x = x
@@ -36,7 +45,7 @@ func newSegment[T](s, e: Point[T]): LineSegment[T] =
   result.p0 = s
   result.p1 = e
 
-proc intersect[T](l0: LineSegment[T], l1: LineSegment[T], step0: T, step1: T): Option[IntersectionPoint[T]] =
+proc intersectFloat[T](l0: LineSegment[T], l1: LineSegment[T], step0: T, step1: T): Option[IntersectionPoint[T]] =
   let p0_x = float l0.p0.x
   let p0_y = float l0.p0.y
   let p1_x = float l0.p1.x
@@ -64,6 +73,33 @@ proc intersect[T](l0: LineSegment[T], l1: LineSegment[T], step0: T, step1: T): O
       let seg1dist = manhattan(P, l1.p0)
       result = some(newIntersectionPoint(P, step0 + seg0dist + step1 + seg1dist))
 
+proc intersect[T](l0: LineSegment[T], l1: LineSegment[T], step0: T, step1: T): Option[IntersectionPoint[T]] =
+  let p0_x = l0.p0.x
+  let p0_y = l0.p0.y
+  let p1_x = l0.p1.x
+  let p1_y = l0.p1.y
+  let p2_x = l1.p0.x
+  let p2_y = l1.p0.y
+  let p3_x = l1.p1.x
+  let p3_y = l1.p1.y
+
+  let s1_x = p1_x - p0_x
+  let s1_y = p1_y - p0_y
+  let s2_x = p3_x - p2_x
+  let s2_y = p3_y - p2_y
+
+  let det = -s2_x * s1_y + s1_x * s2_y
+
+  if det != 0:
+    let s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / (-s2_x * s1_y + s1_x * s2_y)
+    let t = ( s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / (-s2_x * s1_y + s1_x * s2_y)
+
+    if s >= 0 and s <= 1 and t >= 0 and t <= 1:
+      let P = newPoint(T((float p0_x) + t * (float s1_x)), T((float p0_y) + t * (float s1_y)))
+      let seg0dist = manhattan(P, l0.p0)
+      let seg1dist = manhattan(P, l1.p0)
+      result = some(newIntersectionPoint(P, step0 + seg0dist + step1 + seg1dist))
+
 func cmdToDirection(cmd: string): Point[int] =
   let D = cmd.substr(1)
   case cmd[0]:
@@ -87,9 +123,10 @@ iterator lineFromFile[T](f: var File): LineSegment[T] =
     yield newSegment(pCur, next)
     pCur = next
 
-iterator intersectionPoints[T](lhs, rhs: seq[LineSegment[T]]): IntersectionPoint[T] =
+iterator intersectionPoints[T](lhs, rhs: seq[LineSegment[T]], firstLeft: int, lastLeft: int): IntersectionPoint[T] =
   var step0 = 0
-  for seg0 in lhs:
+  for lidx in firstLeft .. lastLeft:
+    let seg0 = lhs[lidx]
     var step1 = 0
     for seg1 in rhs:
       let P = intersect(seg0, seg1, step0, step1)
@@ -97,6 +134,28 @@ iterator intersectionPoints[T](lhs, rhs: seq[LineSegment[T]]): IntersectionPoint
         yield get(P)
       step1 += manhattan(seg1.p0, seg1.p1)
     step0 += manhattan(seg0.p0, seg0.p1)
+
+proc worker(work: Day3Work, first: int, last: int): Option[Day3WorkResult] =
+  var R: Day3WorkResult
+  R.closestDist = int.high()
+  R.closestSteps = int.high()
+
+  for XP in intersectionPoints[int](work.lhs, work.rhs, first, last):
+    let stepP = XP.stepSum
+    let distP = XP.P.x + XP.P.y
+
+    if not isOrigin(XP.P):
+      if stepP < R.closestSteps:
+        R.closestSteps = stepP
+        R.closestPointSteps = XP.P
+        result = some(R)
+      
+      if distP < R.closestDist:
+        R.closestDist = distP
+        R.closestPoint = XP.P
+        result = some(R)
+  
+  
 
 when isMainModule:
   let parseStart = getTime()
@@ -119,23 +178,32 @@ when isMainModule:
 
   let combinedStart = getTime()
   ###
+  var work: Day3Work
   var closestPoint: Point[int]
   var closestPointSteps: Point[int]
   var closestDist = int.high()
   var closestSteps = int.high()
 
-  for XP in intersectionPoints[int](wire0, wire1):
-    let stepP = XP.stepSum
-    let distP = XP.P.x + XP.P.y
+  shallow(wire0)
+  shallow(wire1)
 
-    if not isOrigin(XP.P):
+  new(work)
+  work.lhs = wire0
+  work.rhs = wire1
+  let candidatePoints = distributeWork(worker, work, 0, len(wire0))
+  for oXP in candidatePoints:
+    if isSome(oXP):
+      let XP = get(oXP)
+      let stepP = XP.closestSteps
+      let distP = XP.closestDist
+      
       if stepP < closestSteps:
         closestSteps = stepP
-        closestPointSteps = XP.P
+        closestPointSteps = XP.closestPointSteps
       
       if distP < closestDist:
         closestDist = distP
-        closestPoint = XP.P
+        closestPoint = XP.closestPoint
   ###
   let combinedEnd = getTime()
 
