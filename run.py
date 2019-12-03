@@ -27,8 +27,7 @@ def benchmarkExe(exePath, exeWD, args):
 
         print(f"Preprocess: {timePreprocess} {unitTime}")
         if timeCombined:
-            printStats("Part 1 & 2:", timePart1, unitTime)
-            print(f"Part 1 & 2: {timePart1}")
+            print(f"Part 1 & 2: {timePart1} {unitTime}")
         else:
             print(f"Part 1:     {timePart1} {unitTime}")
             print(f"Part 2:     {timePart2} {unitTime}")
