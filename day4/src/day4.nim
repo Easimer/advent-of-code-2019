@@ -29,26 +29,20 @@ func passwordOk(pass: int): bool =
 
 func passwordOk2(pass: int): bool =
   var maxDigit = 10
-  var hasDoubleGroup = false
   var dubCounter = 1
   var curPass = pass
-  result = true
-  while curPass > 0 and result:
+  while curPass > 0:
     let digit = curPass mod 10
-    if digit > maxDigit:
-      return false
     
     if digit == maxDigit:
       dubCounter += 1
     else:
       if dubCounter == 2:
-        hasDoubleGroup = true
+        return true
       dubCounter = 1
     maxDigit = digit
     curPass = curPass div 10
-  if dubCounter == 2:
-    hasDoubleGroup = true
-  result = result and hasDoubleGroup
+  return dubCounter == 2
 
 type
   WorkKind = enum
@@ -81,18 +75,20 @@ when isMainModule:
   let passRange = readRange()
   let inputEnd = getTime()
 
-  var W1: Day4Work
-  W1.kind = WorkKind.Range
+  # Part 1
+  let W1 = Day4Work(kind: WorkKind.Range)
   let part1Start = getTime()
   let validPasswords = distributeWork(worker, W1, passRange[0], passRange[1]).foldl(a & b)
   let output1 = len(validPasswords)
   let part1End = getTime()
 
-  var W2: Day4Work
-  W2.kind = WorkKind.Seq
-  W2.S = validPasswords
+  # Part 2
+  # In part two we don't need to check the whole range again, since
+  # the set of valid passwords in part 2 is a subset of the valid passwords
+  # in part 1.
+  let W2 = Day4Work(kind: WorkKind.Seq, S: validPasswords)
   let part2Start = getTime()
-  let output2 = len(distributeWork(worker, W2, 0, validPasswords.high()).foldl(a & b))
+  let output2 = distributeWork(worker, W2, 0, validPasswords.high()).map(proc(x:seq[int]):int = len(x)).foldl(a + b)
   let part2End = getTime()
   
   var R: AOCResults
