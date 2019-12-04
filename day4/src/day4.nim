@@ -8,19 +8,26 @@ type ResultCount = int
 
 func passwordOk(pass: int): bool =
   var maxDigit = 10
-  var foundDouble = false
+  var hasDoubleGroup = false
+  var dubCounter = 1
   var curPass = pass
   result = true
-  while curPass > 0:
+  while curPass > 0 and result:
     let digit = curPass mod 10
     if digit > maxDigit:
       result = false
     
     if digit == maxDigit:
-      foundDouble = true
+      dubCounter += 1
+    else:
+      if dubCounter >= 2:
+        hasDoubleGroup = true
+      dubCounter = 1
     maxDigit = digit
     curPass = curPass div 10
-  result = result and foundDouble
+  if dubCounter >= 2:
+    hasDoubleGroup = true
+  result = result and hasDoubleGroup
 
 func passwordOk2(pass: int): bool =
   var maxDigit = 10
