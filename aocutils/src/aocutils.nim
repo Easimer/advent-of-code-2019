@@ -53,7 +53,7 @@ proc distributeWork*[TIn, TOut](procWorker: (proc(work: TIn, first: int, last: i
   var futures: seq[FlowVar[TOut]]
   for i in 0 .. numCPU - 1:
     let indices = distributeWorkIndices(numCPU, totalLoad, i)
-    futures.add(spawn workerProxy(procWorker, work, indices.first, indices.last))
+    futures.add(spawn workerProxy(procWorker, work, first + indices.first, first + indices.last))
 
   for future in futures:
     result.add(^future)
