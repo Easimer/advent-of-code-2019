@@ -55,12 +55,8 @@ proc distributeWork*[TIn, TOut](procWorker: (proc(work: TIn, first: int, last: i
     let indices = distributeWorkIndices(numCPU, totalLoad, i)
     futures.add(spawn workerProxy(procWorker, work, first + indices.first, first + indices.last))
 
-  var arrived: int = blockUntilAny(futures)
-  while true:
-    if arrived != -1:
-      result.add(^futures[arrived])
-    else:
-      break
+  for future in futures:
+    result.add(^future)
 
 proc printResults*(results: AOCResults) =
   echo(%*results)

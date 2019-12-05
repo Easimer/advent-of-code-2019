@@ -45,46 +45,49 @@ template readValueMode(argIdx: int, instr: (int, int, int, int), memory: seq[int
     of 1: $> (pc + argIdx)
     else: raise newException(ValueError, "Invalid mode " & $instr[argIdx])
 
+template nextPC(value: untyped): untyped =
+  result.nextPC = value
+
 func executeInstruction*(inp, pc: int, memory: var seq[int]): InterpreterResult =
   result.halt = false
   let instr = decodeInstruction($>(pc + 0))
   case instr.opcode:
     of ADD:
       $>>(pc + 3) = readValueMode(1, instr, memory) + readValueMode(2, instr, memory)
-      result.nextPC = pc + 4
+      nextPC(pc + 4)
     of MUL:
       $>>(pc + 3) = readValueMode(1, instr, memory) * readValueMode(2, instr, memory)
-      result.nextPC = pc + 4
+      nextPC(pc + 4)
     of IN:
       $>>(pc + 1) = inp
-      result.nextPC = pc + 2
+      nextPC(pc + 2)
     of OUT:
       result.output = some($>>(pc + 1))
-      result.nextPC = pc + 2
+      nextPC(pc + 2)
     of HLT:
       result.halt = true
     of JNZ:
       if readValueMode(1, instr, memory) != 0:
-        result.nextPC = readValueMode(2, instr, memory)
+        nextPC(readValueMode(2, instr, memory))
       else:
-        result.nextPC = pc + 3
+        nextPC(pc + 3)
     of JZ:
       if readValueMode(1, instr, memory) == 0:
-        result.nextPC = readValueMode(2, instr, memory)
+        nextPC(readValueMode(2, instr, memory))
       else:
-        result.nextPC = pc + 3
+        nextPC(pc + 3)
     of LT:
       if readValueMode(1, instr, memory) < readValueMode(2, instr, memory):
         $>>(pc + 3) = 1
       else:
         $>>(pc + 3) = 0
-      result.nextPC = pc + 4
+      nextPC(pc + 4)
     of EQ:
       if readValueMode(1, instr, memory) == readValueMode(2, instr, memory):
         $>>(pc + 3) = 1
       else:
         $>>(pc + 3) = 0
-      result.nextPC = pc + 4
+      nextPC(pc + 4)
     else:
       raise newException(ValueError, "Unknown opcode in " & $instr)
 
