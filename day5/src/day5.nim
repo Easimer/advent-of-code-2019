@@ -13,6 +13,16 @@ type
     halt: bool
     output: Option[int]
 
+const ADD = 1
+const MUL = 2
+const IN  = 3
+const OUT = 4
+const JNZ = 5
+const JZ  = 6
+const LT  = 7
+const EQ  = 8
+const HLT = 99
+
 template `$>`(address: untyped): untyped = memory[address]
 template `$>>`(address: untyped): untyped = $> $> address
 
@@ -36,56 +46,61 @@ assert decodeInstruction(11101) == (1, 1, 1, 1)
 
 func readValueMode(A: int, mode: int, memory: seq[int]): int =
   case mode:
-    of 0:
-      memory[memory[A]]
-    of 1:
-      memory[A]
-    else:
-      raise newException(ValueError, "Invalid mode " & $mode)
+    of 0: $> $> A
+    of 1: $> A
+    else: raise newException(ValueError, "Invalid mode " & $mode)
 
-proc executeInstruction(pc: int, memory: var seq[int]): InterpreterResult =
+proc executeInstruction(inp, pc: int, memory: var seq[int]): InterpreterResult =
   result.halt = false
   let instr = decodeInstruction($>(pc + 0))
   case instr.opcode:
-    of 1: # add
+    of ADD: # add
       $>>(pc + 3) = readValueMode(pc + 1, instr.mode0, memory) + readValueMode(pc + 2, instr.mode1, memory)
       result.nextPC = pc + 4
-    of 2: # mul
+    of MUL: # mul
       $>>(pc + 3) = readValueMode(pc + 1, instr.mode0, memory) * readValueMode(pc + 2, instr.mode1, memory)
       result.nextPC = pc + 4
-    of 3: # in
-      $>>(pc + 1) = 1
+    of IN: # in
+      $>>(pc + 1) = inp
       result.nextPC = pc + 2
-    of 4: # out
+    of OUT: # out
       result.output = some($>>(pc + 1))
       result.nextPC = pc + 2
-    of 99: # hlt
+    of HLT: # hlt
       result.halt = true
+    of JNZ:
+      if readValueMode(pc + 1, instr.mode0, memory) != 0:
+        result.nextPC = readValueMode(pc + 2, instr.mode1, memory)
+      else:
+        result.nextPC = pc + 3
+    of JZ:
+      if readValueMode(pc + 1, instr.mode0, memory) == 0:
+        result.nextPC = readValueMode(pc + 2, instr.mode1, memory)
+      else:
+        result.nextPC = pc + 3
+    of LT:
+      if readValueMode(pc + 1, instr.mode0, memory) < readValueMode(pc + 2, instr.mode1, memory):
+        $>>(pc + 3) = 1
+      else:
+        $>>(pc + 3) = 0
+      result.nextPC = pc + 4
+    of EQ:
+      if readValueMode(pc + 1, instr.mode0, memory) == readValueMode(pc + 2, instr.mode1, memory):
+        $>>(pc + 3) = 1
+      else:
+        $>>(pc + 3) = 0
+      result.nextPC = pc + 4
     else:
       raise newException(ValueError, "Unknown opcode in " & $instr)
 
-proc runWithInitialState(noun, verb: int, origMemory: seq[int]): int =
-  var pc = 0
-  var program = origMemory
-
-  program[1] = noun
-  program[2] = verb
-
-  var ires: InterpreterResult
-
-  while not ires.halt:
-    ires = executeInstruction(pc, program)
-    pc = ires.nextPC
-  
-  result = program[0]
-
-proc runProgram(memory: var seq[int]): int =
+proc runProgram(inp: int, memory: seq[int]): int =
   ## Runs the program and returns the diagnostic code
   var ires: InterpreterResult
   var pc = 0
+  var program = memory
 
   while not ires.halt:
-    ires = executeInstruction(pc, memory)
+    ires = executeInstruction(inp, pc, program)
     pc = ires.nextPC
     if ires.output.isSome():
       result = ires.output.get()
@@ -100,11 +115,11 @@ when isMainModule:
   let parseEnd = getTime()
 
   let part1Start = getTime()
-  let output1 = $(runProgram(program))
+  let output1 = $(runProgram(1, program))
   let part1End = getTime()
 
   let part2Start = getTime()
-  let output2 = ""
+  let output2 = $(runProgram(5, program))
   let part2End = getTime()
 
   var R: AOCResults
