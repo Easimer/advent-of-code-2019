@@ -75,15 +75,13 @@ func executeInstruction*(inp, pc: int, memory: var seq[int]): InterpreterResult 
     of HLT:
       result.halt = true
     of JNZ:
-      if @1 != 0:
-        nextPC(@2)
-      else:
-        nextPC(pc + 3)
+      nextPC:
+        if @1 != 0: @2
+        else: pc + 3
     of JZ:
-      if @1 == 0:
-        nextPC(@2)
-      else:
-        nextPC(pc + 3)
+      nextPC:
+        if @1 == 0: @2
+        else: pc + 3
     of LT:
       if @1 < @2:
         $>>(pc + 3) = 1
