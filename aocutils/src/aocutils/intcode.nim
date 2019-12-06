@@ -83,15 +83,9 @@ func executeInstruction*(inp, pc: int, memory: var seq[int]): InterpreterResult 
         if @1 == 0: @2
         else: pc + 3
     of LT:
-      if @1 < @2:
-        $>>(pc + 3) = 1
-      else:
-        $>>(pc + 3) = 0
+      $>>(pc + 3) = int(@1 < @2)
     of EQ:
-      if @1 == @2:
-        $>>(pc + 3) = 1
-      else:
-        $>>(pc + 3) = 0
+      $>>(pc + 3) = int(@1 == @2)
   result.nextPC += incPC(instr.opcode)
   if not result.halt: assert(result.nextPC != pc, "Program counter has not been modified! PC=" & $pc & " OP=" & $instr.opcode & " Invalid opcode or spinning?")
 
