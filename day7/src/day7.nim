@@ -2,6 +2,8 @@ import algorithm
 import os
 import options
 import sequtils
+import times
+import aocutils
 import aocutils/intcode
 
 type Amplifier = object
@@ -31,7 +33,7 @@ proc amplifier(state: var Amplifier, signalInput: int): int =
   state.halted = ires.halt
   state.output
 
-iterator perm(s: var seq[int]): seq[int] =
+iterator perm(s: seq[int]): seq[int] =
   var a = s
   yield a
   while nextPermutation(a): yield a
@@ -40,35 +42,45 @@ func chain(amps: var seq[Amplifier], input: int): int =
   result = input
   for i in 0..4: result = amplifier(amps[i], result)
 
-func part1(program: seq[int]): int =
-  var maxThrust = 0
-  var phases = toSeq(0..4)
-  for P in perm(phases):
-    var amplifiers: seq[Amplifier]
-    for i in 0..4: amplifiers.add(initAmp(P[i], program))
-    let signal = chain(amplifiers, 0)
-    if signal > maxThrust:
-      maxThrust = signal
-  
-  result = maxThrust
+type Work = object
+  program: seq[int]
+  phasePermutations: seq[seq[int]]
 
-func part2(program: seq[int]): int =
-  var maxThrust = 0
-  var phases = toSeq(5..9)
-  for P in perm(phases):
+proc worker1(work: Work, first, last: int): int =
+  result = 0
+  for i in first .. last:
+    var amplifiers: seq[Amplifier]
+    for j in 0..4: amplifiers.add(initAmp(work.phasePermutations[i][j], work.program))
+    let signal = chain(amplifiers, 0)
+    if signal > result:
+      result = signal
+
+proc worker2(work: Work, first, last: int): int =
+  result = 0
+  for i in first .. last:
     var E = 0
     var amplifiers: seq[Amplifier]
-    for i in 0..4: amplifiers.add(initAmp(P[i], program))
+    for j in 0..4: amplifiers.add(initAmp(work.phasePermutations[i][j], work.program))
     
     while not amplifiers[4].halted:
       E = chain(amplifiers, E)
     
-    if E > maxThrust:
-      maxThrust = E
-  result = maxThrust
+    if E > result:
+      result = E
 
 when isMainModule:
+  let parseStart = getTime()
   let inputPath = if paramCount() > 0: paramStr(1) else: "input.txt"
-  let program = readProgramFromPath(inputPath)
-  echo($part1(program))
-  echo($part2(program))
+  let P = readProgramFromPath(inputPath)
+  let parseEnd = getTime()
+
+  let part1Start = getTime()
+  let output1 = $max(distributeWork(worker1, Work(program: P, phasePermutations: toSeq(perm(toSeq(0..4)))), 0, 120))
+  let part1End = getTime()
+  let part2Start = getTime()
+  let output2 = $max(distributeWork(worker2, Work(program: P, phasePermutations: toSeq(perm(toSeq(5..9)))), 0, 120))
+  let part2End = getTime()
+
+  var R: AOCResults
+  R.init(output1, output2, inMicroseconds(parseEnd - parseStart), inMicroseconds(part1End - part1Start), inMicroseconds(part2End - part2Start))
+  echo(R)

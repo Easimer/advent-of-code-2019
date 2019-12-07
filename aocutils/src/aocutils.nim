@@ -14,12 +14,12 @@ type
     timePart1: float
     timePart2: float
 
-proc init*(R: var AOCResults, output1: string, output2: string, timePreprocess: float, timePart1: float, timePart2: float, isTimeCombined: bool = false) =
+proc init*[TTP, TT1, TT2](R: var AOCResults, output1: string, output2: string, timePreprocess: TTP, timePart1: TT1, timePart2: TT2, isTimeCombined: bool = false) =
   R.output1 = output1
   R.output2 = output2
-  R.timePreprocess = timePreprocess
-  R.timePart1 = timePart1
-  R.timePart2 = timePart2
+  R.timePreprocess = float(timePreprocess)
+  R.timePart1 = float(timePart1)
+  R.timePart2 = float(timePart2)
   R.unitTime = "us"
   R.isTimeCombined = isTimeCombined
 
@@ -58,5 +58,8 @@ proc distributeWork*[TIn, TOut](procWorker: (proc(work: TIn, first: int, last: i
   for future in futures:
     result.add(^future)
 
-proc printResults*(results: AOCResults) =
+proc printResults*(results: AOCResults) {.deprecated.} =
   echo(%*results)
+
+func echo*(results: AOCResults) =
+  debugEcho(%*results)
