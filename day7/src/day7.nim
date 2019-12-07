@@ -30,45 +30,41 @@ proc amplifier(state: var Amplifier, signalInput: int): int =
       state.consumedPhase = true
   state.halted = ires.halt
   state.output
-      
+
+iterator perm(s: var seq[int]): seq[int] =
+  var a = s
+  yield a
+  while nextPermutation(a): yield a
 
 func chain(amps: var seq[Amplifier], input: int): int =
-  let A = amplifier(amps[0], input)
-  let B = amplifier(amps[1], A)
-  let C = amplifier(amps[2], B)
-  let D = amplifier(amps[3], C)
-  amplifier(amps[4], D)
+  result = input
+  for i in 0..4: result = amplifier(amps[i], result)
 
 func part1(program: seq[int]): int =
   var maxThrust = 0
   var phases = toSeq(0..4)
-  while true:
+  for P in perm(phases):
     var amplifiers: seq[Amplifier]
-    for i in 0..4: amplifiers.add(initAmp(phases[i], program))
+    for i in 0..4: amplifiers.add(initAmp(P[i], program))
     let signal = chain(amplifiers, 0)
     if signal > maxThrust:
       maxThrust = signal
-    if not nextPermutation(phases):
-      break
   
   result = maxThrust
 
 func part2(program: seq[int]): int =
   var maxThrust = 0
   var phases = toSeq(5..9)
-  while true:
+  for P in perm(phases):
     var E = 0
     var amplifiers: seq[Amplifier]
-    for i in 0..4: amplifiers.add(initAmp(phases[i], program))
+    for i in 0..4: amplifiers.add(initAmp(P[i], program))
     
     while not amplifiers[4].halted:
       E = chain(amplifiers, E)
     
     if E > maxThrust:
       maxThrust = E
-    if not nextPermutation(phases):
-      break
- 
   result = maxThrust
 
 when isMainModule:
