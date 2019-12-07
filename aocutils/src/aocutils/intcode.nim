@@ -7,6 +7,7 @@ type
     nextPC*: int
     halt*: bool
     output*: Option[int]
+    consumedInput*: bool
   
   Opcode = enum
     ADD = 1, MUL = 2, IN = 3, OUT = 4, JNZ = 5, JZ = 6,
@@ -70,6 +71,7 @@ func executeInstruction*(inp, pc: int, memory: var seq[int]): InterpreterResult 
       $>>(pc + 3) = @1 * @2
     of IN:
       $>>(pc + 1) = inp
+      result.consumedInput = true
     of OUT:
       result.output = some($>>(pc + 1))
     of HLT:
