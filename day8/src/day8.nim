@@ -27,14 +27,15 @@ proc readImage(path: string): Image =
 func countPixelValue(lay: Layer, pixVal: uint8): int = lay.map(pix => (if pix == pixVal: 1 else: 0)).foldl(a + b)
 func numberOfZeroes(img: Image): seq[int] = img.map(l => l.countPixelValue(0))
 
+func minp[T](a: openArray[T]): int =
+  result = 0
+  for i in 1 .. a.high():
+    if a[i] < a[result]:
+      result = i
+
 func part1(img: Image): int =
-  var minIdx = 0
-  let countOfZeroes = numberOfZeroes(img)
-  for i in 1 .. img.high():
-    if countOfZeroes[i] < countOfZeroes[minIdx]:
-      minIdx = i
-  
-  countPixelValue(img[minIdx], 1) * countPixelValue(img[minIdx], 2)
+  let min = minp(numberOfZeroes(img))
+  countPixelValue(img[min], 1) * countPixelValue(img[min], 2)
 
 func flatten(img: Image): Layer =
   result.fill(2)
