@@ -26,6 +26,9 @@ def testExe(exePath, exeWD):
     except Exception as e:
         print("FAILED: " + str(e))
         ret = False
+    except JSONDecodeError:
+        print("No output")
+        ret = False
 
     return ret
 

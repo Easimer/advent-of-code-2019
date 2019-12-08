@@ -1,6 +1,8 @@
+import algorithm
+import aocutils
+import json
 import os
 import sequtils
-import algorithm
 import sugar
 
 const IMG_WIDTH = 25
@@ -26,12 +28,6 @@ proc readImage(path: string): Image =
 
 func countPixelValue(lay: Layer, pixVal: uint8): int = lay.map(pix => (if pix == pixVal: 1 else: 0)).foldl(a + b)
 func numberOfZeroes(img: Image): seq[int] = img.map(l => l.countPixelValue(0))
-
-func minp[T](a: openArray[T]): int =
-  result = 0
-  for i in 1 .. a.high():
-    if a[i] < a[result]:
-      result = i
 
 func part1(img: Image): int =
   let min = minp(numberOfZeroes(img))
@@ -59,5 +55,5 @@ func part2(img: Image): string =
 when isMainModule:
   let inputPath = if paramCount() > 0: paramStr(1) else: "input.txt"
   let img = readImage(inputPath)
-  echo(part1(img))
-  echo(part2(img))
+  
+  echo(%*{"output1": $part1(img), "output2": part2(img)})

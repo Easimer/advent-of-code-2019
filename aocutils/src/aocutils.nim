@@ -63,3 +63,10 @@ proc printResults*(results: AOCResults) {.deprecated.} =
 
 func echo*(results: AOCResults) =
   debugEcho(%*results)
+
+func minp*[T](a: openArray[T]): int =
+  ## Finds the place of the minimum
+  result = 0
+  for i in 1 .. a.high():
+    if a[i] < a[result]:
+      result = i
