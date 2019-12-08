@@ -70,3 +70,16 @@ func minp*[T](a: openArray[T]): int =
   for i in 1 .. a.high():
     if a[i] < a[result]:
       result = i
+
+func maxp*[T](a: openArray[T]): int =
+  ## Finds the place of the maximum
+  result = 0
+  for i in 1 .. a.high():
+    if a[i] < a[result]:
+      result = i
+
+func count*[T](arr: openArray[T], pred: proc(x: T): bool): int =
+  ## Returns the number of elements for which `pred` holds.
+  for elem in arr:
+    if pred(elem):
+      result += 1

@@ -26,7 +26,7 @@ proc readImage(path: string): Image =
         layerIdx += 1
     result.add(currentLayer)
 
-func countPixelValue(lay: Layer, pixVal: uint8): int = lay.map(pix => (if pix == pixVal: 1 else: 0)).foldl(a + b)
+func countPixelValue(lay: Layer, pixVal: uint8): int = lay.count(x => x == pixVal)
 func numberOfZeroes(img: Image): seq[int] = img.map(l => l.countPixelValue(0))
 
 func part1(img: Image): int =

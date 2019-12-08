@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.2.7"
+version       = "0.2.8"
 author        = "Daniel Meszaros"
 description   = "AoC 2019 utilities"
 license       = "MIT"
