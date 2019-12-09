@@ -4,6 +4,7 @@ type
   Opcode* = enum
     ADD = 1, MUL = 2, IN = 3, OUT = 4, JNZ = 5, JZ = 6,
     LT = 7, EQ = 8,
+    BASE = 9,
     HLT = 99
 
   DecodedInstruction* = tuple[opcode: Opcode, mode0, mode1, mode2: int]
@@ -36,6 +37,7 @@ template incPC*(op: Opcode): int =
     of EQ: 4
     of IN: 2
     of OUT: 2
+    of BASE: 2
     else: 0
 
 template len*(op: Opcode): int =
@@ -50,3 +52,4 @@ template len*(op: Opcode): int =
     of JNZ: 3
     of JZ: 3
     of HLT: 1
+    of BASE: 2

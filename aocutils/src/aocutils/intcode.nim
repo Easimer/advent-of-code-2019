@@ -9,6 +9,7 @@ type
     halt*: bool
     output*: Option[int]
     consumedInput*: bool
+    base*: int
   
 template `$>`(address: untyped): untyped = memory[address]
 template `$>>`(address: untyped): untyped = $> $> address
@@ -18,25 +19,43 @@ template `@`(argIdx: int): int =
   case instr[argIdx]:
     of 0: $>> (pc + argIdx)
     of 1: $> (pc + argIdx)
+    of 2: $>($>(pc + argIdx) + base)
     else: raise newException(ValueError, "Invalid mode " & $instr[argIdx])
 
 template nextPC(value: untyped): untyped =
   ## Sets the program counter
   result.nextPC = value
 
-func executeInstruction*(inp, pc: int, memory: var seq[int]): InterpreterResult =
+template `@*`(offset: int): int =
+  ## Gets an argument value, taking into account the argument mode.
+  ## argIdx==1 returns the first argument, argIdx==2 the second and so on.
+  case instr[offset]:
+    of 0: $> (pc + offset)
+    of 1: $> (pc + offset)
+    of 2: $>(pc + offset) + base
+    else: -999999999
+
+func write(memory: var seq[int], mode: int, pc: int, offset: int, base: int, value: int) =
+  case mode:
+    of 0: $>>(pc + offset) = value
+    of 1: $>>(pc + offset) = value
+    of 2: $>($>(pc + offset) + base) = value
+    else: raise newException(ValueError, "ASD")
+
+func executeInstruction*(inp, pc: int, memory: var seq[int], base: int = 0): InterpreterResult =
   result.nextPC = pc
+  result.base = base
   let instr = decodeInstruction($>(pc + 0))
   case instr.opcode:
     of ADD:
-      $>>(pc + 3) = @1 + @2
+      write(memory, instr.mode2, pc, 3, base, @1 + @2)
     of MUL:
-      $>>(pc + 3) = @1 * @2
+      write(memory, instr.mode2, pc, 3, base, @1 * @2)
     of IN:
-      $>>(pc + 1) = inp
+      write(memory, instr.mode0, pc, 1, base, inp)
       result.consumedInput = true
     of OUT:
-      result.output = some($>>(pc + 1))
+      result.output = some(@1)
     of HLT:
       result.halt = true
     of JNZ:
@@ -48,9 +67,11 @@ func executeInstruction*(inp, pc: int, memory: var seq[int]): InterpreterResult 
         if @1 == 0: @2
         else: pc + 3
     of LT:
-      $>>(pc + 3) = int(@1 < @2)
+      write(memory, instr.mode2, pc, 3, base, int(@1 < @2))
     of EQ:
-      $>>(pc + 3) = int(@1 == @2)
+      write(memory, instr.mode2, pc, 3, base, int(@1 == @2))
+    of BASE:
+      result.base += @1
   result.nextPC += incPC(instr.opcode)
   if not result.halt: assert(result.nextPC != pc, "Program counter has not been modified! PC=" & $pc & " OP=" & $instr.opcode & " Invalid opcode or spinning?")
 
@@ -58,3 +79,7 @@ proc readProgramFromPath*(path: string): seq[int] =
   var f = open(path)
   defer: close(f)
   result = f.readLine().split(',').map(proc(x: string): int = parseInt(x))
+
+  # fill memory
+  for i in 0..10000:
+    result.add(0)
