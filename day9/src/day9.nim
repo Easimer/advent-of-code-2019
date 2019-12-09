@@ -1,4 +1,5 @@
 import aocutils/intcode
+import json
 import os
 import options
 
@@ -15,7 +16,6 @@ when isMainModule:
   let inputPath = if paramCount() > 0: paramStr(1) else: "input.txt"
 
   var program = readProgramFromPath(inputPath)
-  echo(runWithInput(1, program))
-  echo(runWithInput(2, program))
+  echo(%*{"output1": $runWithInput(1, program), "output2": $runWithInput(2, program)})
 
   

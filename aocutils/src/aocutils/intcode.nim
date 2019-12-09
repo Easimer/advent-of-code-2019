@@ -26,21 +26,11 @@ template nextPC(value: untyped): untyped =
   ## Sets the program counter
   result.nextPC = value
 
-template `@*`(offset: int): int =
-  ## Gets an argument value, taking into account the argument mode.
-  ## argIdx==1 returns the first argument, argIdx==2 the second and so on.
-  case instr[offset]:
-    of 0: $> (pc + offset)
-    of 1: $> (pc + offset)
-    of 2: $>(pc + offset) + base
-    else: -999999999
-
-func write(memory: var seq[int], mode: int, pc: int, offset: int, base: int, value: int) =
+template write(memory: var seq[int], mode: int, pc: int, offset: int, base: int, value: int) =
   case mode:
     of 0: $>>(pc + offset) = value
-    of 1: $>>(pc + offset) = value
     of 2: $>($>(pc + offset) + base) = value
-    else: raise newException(ValueError, "ASD")
+    else: raise newException(ValueError, "Invalid write mode " & $mode)
 
 func executeInstruction*(inp, pc: int, memory: var seq[int], base: int = 0): InterpreterResult =
   result.nextPC = pc
