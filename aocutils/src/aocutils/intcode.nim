@@ -1,6 +1,7 @@
 import options
 import sequtils
 import strutils
+import sugar
 import intcode/internal
 
 type
@@ -68,8 +69,7 @@ func executeInstruction*(inp, pc: int, memory: var seq[int], base: int = 0): Int
 proc readProgramFromPath*(path: string): seq[int] =
   var f = open(path)
   defer: close(f)
-  result = f.readLine().split(',').map(proc(x: string): int = parseInt(x))
+  result = f.readLine().split(',').map(x => parseInt(x))
 
-  # fill memory
   for i in 0..10000:
     result.add(0)
