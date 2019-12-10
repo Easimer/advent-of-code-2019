@@ -3,6 +3,7 @@ import sets
 import tables
 import heapqueue
 import math
+import json
 
 type
   Field = seq[seq[bool]]
@@ -136,5 +137,4 @@ when isMainModule:
   let inputPath = if paramCount() > 0: paramStr(1) else: "input.txt"
   let field = loadInput(inputPath)
   var station: Point
-  echo(part1(field, station))
-  echo(part2(field, station))
+  echo(%*{"output1": $part1(field, station), "output2": $part2(field, station)})
