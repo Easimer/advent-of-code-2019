@@ -1,6 +1,5 @@
 import os
 import sets
-import tables
 import heapqueue
 import math
 import json
