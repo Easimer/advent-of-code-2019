@@ -53,24 +53,23 @@ func write(memory: var Memory, mode: int, pc: int, offset: int, base: int, value
     of 2: memory[fetch(memory, 1, pc, offset, 0) + base] = value
     else: raise newException(ValueError, "Invalid write mode " & $mode)
 
+template `<<`(outArgIdx: int, value: untyped) =
+  write(memory, instr[outArgIdx], pc, outArgIdx, base, value)
+
 func executeInstruction*(inp, pc: int, memory: var Memory, base: int = 0): InterpreterResult =
   result.nextPC = pc
   result.base = base
   let instr = decodeInstruction(fetch(memory, 1, pc, 0, 0))
-  case instr.opcode:
+  case instr[0]:
     of ADD:
-      let arg0 = fetch(memory, instr.mode0, pc, 1, base)
-      let arg1 = fetch(memory, instr.mode1, pc, 2, base)
-      write(memory, instr.mode2, pc, 3, base, arg0 + arg1)
+      3 << @1 + @2
     of MUL:
-      let arg0 = fetch(memory, instr.mode0, pc, 1, base)
-      let arg1 = fetch(memory, instr.mode1, pc, 2, base)
-      write(memory, instr.mode2, pc, 3, base, arg0 * arg1)
+      3 << @1 * @2
     of IN:
-      write(memory, instr.mode0, pc, 1, base, inp)
+      1 << inp
       result.consumedInput = true
     of OUT:
-      result.output = some(fetch(memory, instr.mode0, pc, 1, base))
+      result.output = some(@1)
     of HLT:
       result.halt = true
     of JNZ:
@@ -82,13 +81,13 @@ func executeInstruction*(inp, pc: int, memory: var Memory, base: int = 0): Inter
         if @1 == 0: @2
         else: pc + 3
     of LT:
-      write(memory, instr.mode2, pc, 3, base, int(@1 < @2))
+      3 << int(@1 < @2)
     of EQ:
-      write(memory, instr.mode2, pc, 3, base, int(@1 == @2))
+      3 << int(@1 == @2)
     of BASE:
       result.base += @1
-  result.nextPC += incPC(instr.opcode)
-  if not result.halt: assert(result.nextPC != pc, "Program counter has not been modified! PC=" & $pc & " OP=" & $instr.opcode & " Invalid opcode or spinning?")
+  result.nextPC += incPC(instr[0])
+  if not result.halt: assert(result.nextPC != pc, "Program counter has not been modified! PC=" & $pc & " OP=" & $instr[0] & " Invalid opcode or spinning?")
 
 proc readProgramFromPath*(path: string): Memory =
   var f = open(path)

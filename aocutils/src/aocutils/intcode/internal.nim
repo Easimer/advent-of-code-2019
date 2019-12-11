@@ -7,17 +7,18 @@ type
     BASE = 9,
     HLT = 99
 
-  DecodedInstruction* = tuple[opcode: Opcode, mode0, mode1, mode2: int]
+  #DecodedInstruction* = tuple[opcode: Opcode, mode0, mode1, mode2: int]
+  DecodedInstruction* = (Opcode, int, int, int)
 
 func decodeInstruction*(instr: int): DecodedInstruction =
   ## Decodes the instruction, returning the opcode and the argument modes.
-  result.opcode = Opcode(instr mod 100)
-  result.mode0 = instr div 100
-  result.mode1 = result.mode0 div 10
-  result.mode0 = result.mode0 mod 10
-  result.mode2 = result.mode1 div 10
-  result.mode1 = result.mode1 mod 10
-  result.mode2 = result.mode2 mod 10
+  result[0] = Opcode(instr mod 100)
+  result[1] = instr div 100
+  result[2] = result[1] div 10
+  result[1] = result[1] mod 10
+  result[3] = result[2] div 10
+  result[2] = result[2] mod 10
+  result[3] = result[3] mod 10
 
 assert decodeInstruction(    1) == (ADD, 0, 0, 0)
 assert decodeInstruction(  101) == (ADD, 1, 0, 0)
