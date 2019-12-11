@@ -57,8 +57,7 @@ proc run(origProgram: Memory, startOn: Tile): (int, string) =
     result[1] &= '\n'
 
 when isMainModule:
-  let inputPath = if paramCount() > 0: paramStr(1) else: "input.txt"
-  var program = readProgramFromPath(inputPath)
+  let program = readProgramFromPath(if paramCount() > 0: paramStr(1) else: "input.txt")
   let output1 = run(program, Black)[0]
   let output2 = run(program, White)[1]
   echo(%*{"output1": output1, "output2": output2})
