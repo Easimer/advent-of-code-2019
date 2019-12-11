@@ -12,4 +12,4 @@ backend       = "cpp"
 # Dependencies
 
 requires "nim >= 1.0.0"
-requires "aocutils >= 0.3.0"
+requires "aocutils >= 0.3.1"

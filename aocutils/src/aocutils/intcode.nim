@@ -12,38 +12,22 @@ type
     output*: Option[int]
     consumedInput*: bool
     base*: int
-  
   Memory* = Table[int, int]
 
-template `@`(argIdx: int): int =
-  ## Gets an argument value, taking into account the argument mode.
-  ## argIdx==1 returns the first argument, argIdx==2 the second and so on.
-  fetch(memory, instr[argIdx], pc, argIdx, base)
-
-template nextPC(value: untyped): untyped =
-  ## Sets the program counter
-  result.nextPC = value
+template `?>>`(address: untyped): int = (if address in memory: memory[address] else: 0)
+template `<<`(outArgIdx: int, value: untyped) = write(memory, instr[outArgIdx], pc, outArgIdx, base, value)
+template `!>`(cond: untyped, val: (untyped, untyped)) = result.nextPC = (if cond: val[0] else: val[1])
+template `@`(argIdx: int): int = fetch(memory, instr[argIdx], pc, argIdx, base)
 
 func fetch(memory: Memory, mode: int, pc: int, offset: int, base: int): int =
   let addr0 = pc + offset
   case mode:
     of 0:
-      let addr1 = fetch(memory, 1, 0, addr0, 0)
-      if addr1 in memory:
-        memory[addr1]
-      else:
-        0
+      ?>> fetch(memory, 1, 0, addr0, 0)
     of 1:
-      if addr0 in memory:
-        memory[addr0]
-      else:
-        0
+      ?>> addr0
     of 2:
-      let addr1 = memory[addr0] + base
-      if addr1 in memory:
-        memory[addr1]
-      else:
-        0
+      ?>> (fetch(memory, 1, 0, addr0, 0) + base)
     else:
       raise newException(ValueError, "Invalid mode " & $mode)
 
@@ -52,9 +36,6 @@ func write(memory: var Memory, mode: int, pc: int, offset: int, base: int, value
     of 0: memory[fetch(memory, 1, pc, offset, 0)] = value
     of 2: memory[fetch(memory, 1, pc, offset, 0) + base] = value
     else: raise newException(ValueError, "Invalid write mode " & $mode)
-
-template `<<`(outArgIdx: int, value: untyped) =
-  write(memory, instr[outArgIdx], pc, outArgIdx, base, value)
 
 func executeInstruction*(inp, pc: int, memory: var Memory, base: int = 0): InterpreterResult =
   result.nextPC = pc
@@ -65,27 +46,22 @@ func executeInstruction*(inp, pc: int, memory: var Memory, base: int = 0): Inter
       3 << @1 + @2
     of MUL:
       3 << @1 * @2
-    of IN:
-      1 << inp
-      result.consumedInput = true
-    of OUT:
-      result.output = some(@1)
-    of HLT:
-      result.halt = true
     of JNZ:
-      nextPC:
-        if @1 != 0: @2
-        else: pc + 3
+      @1 != 0 !> (@2, pc + 3)
     of JZ:
-      nextPC:
-        if @1 == 0: @2
-        else: pc + 3
+      @1 == 0 !> (@2, pc + 3)
     of LT:
       3 << int(@1 < @2)
     of EQ:
       3 << int(@1 == @2)
     of BASE:
       result.base += @1
+    of OUT:
+      result.output = some(@1)
+    of IN:
+      1 << inp
+      result.consumedInput = true
+    of HLT: result.halt = true
   result.nextPC += incPC(instr[0])
   if not result.halt: assert(result.nextPC != pc, "Program counter has not been modified! PC=" & $pc & " OP=" & $instr[0] & " Invalid opcode or spinning?")
 
