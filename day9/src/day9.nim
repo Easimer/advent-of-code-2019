@@ -3,7 +3,7 @@ import json
 import os
 import options
 
-func runWithInput(input: int, origProgram: seq[int]): int =
+func runWithInput(input: int, origProgram: Memory): int =
   var state: InterpreterResult
   var program = origProgram
 

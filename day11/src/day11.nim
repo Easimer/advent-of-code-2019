@@ -16,7 +16,7 @@ func getTile(pos: (int, int), map: Table[(int, int), Tile]): Tile =
   else:
     Black
 
-proc run(origProgram: seq[int], startOn = Black): (int, string) =
+proc run(origProgram: Memory, startOn = Black): (int, string) =
   var state: InterpreterResult
   var program = origProgram
 
