@@ -13,3 +13,4 @@ backend       = "cpp"
 
 requires "nim >= 1.0.0"
 requires "aocutils >= 0.2.10"
+requires "gifwriter >= 0.1.0"

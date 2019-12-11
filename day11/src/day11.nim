@@ -3,6 +3,7 @@ import os
 import tables
 import options
 import json
+import gifwriter
 
 type
   Tile = enum
@@ -16,6 +17,17 @@ func getTile(pos: (int, int), map: Table[(int, int), Tile]): Tile =
   else:
     Black
 
+
+const ANIM_SCALE = 8
+
+func createPixelBuffer(width, height: int): seq[Color] = newSeq[Color](ANIM_SCALE * ANIM_SCALE * width * height)
+
+proc setPixel(buffer: var seq[Color], x, y: int, w, h: int, c: Color) =
+  for yoff in 0 .. ANIM_SCALE - 1:
+    let rowOffset = (y * ANIM_SCALE + yoff) * ANIM_SCALE * w
+    for xoff in 0 .. ANIM_SCALE - 1:
+      buffer[rowOffset + ANIM_SCALE * x + xoff] = c
+    
 proc run(origProgram: seq[int], startOn = Black): (int, string) =
   var state: InterpreterResult
   var program = origProgram
@@ -26,6 +38,12 @@ proc run(origProgram: seq[int], startOn = Black): (int, string) =
   var mode = Paint # Paint mode
   map[pos] = startOn
 
+  let width = 64
+  let height = 16
+  var anim = newGif("11.gif", ANIM_SCALE * width, ANIM_SCALE * height, colors = 16)
+  defer: close(anim)
+  var pixels = createPixelBuffer(width, height)
+
   while not state.halt:
     let input = if getTile(pos, map) == White: 1 else: 0
     state = executeInstruction(input, state.nextPC, program, state.base)
@@ -35,8 +53,14 @@ proc run(origProgram: seq[int], startOn = Black): (int, string) =
           case state.output.get():
             of 0:
               map[pos] = Black
+              if pos[0] >= 0 and pos[0] <= 40 and pos[1] >= -5 and pos[1] <= 5:
+                setPixel(pixels, pos[0], pos[1] + 5, width, height, Color(r: 0, g: 0, b: 0))
+              anim.write(pixels)
             of 1:
               map[pos] = White
+              if pos[0] >= 0 and pos[0] <= 40 and pos[1] >= -5 and pos[1] <= 5:
+                setPixel(pixels, pos[0], pos[1] + 5, width, height, Color(r: 255, g: 255, b: 255))
+              anim.write(pixels)
             else: raise newException(ValueError, "FUG")
           mode = Turn
         of Turn:
@@ -55,6 +79,9 @@ proc run(origProgram: seq[int], startOn = Black): (int, string) =
             of 3: pos[1] -= 1
             else: raise newException(ValueError, "FUG")
           mode = Paint
+          if pos[0] >= 0 and pos[0] <= 40 and pos[1] >= -5 and pos[1] <= 5:
+            setPixel(pixels, pos[0], pos[1] + 5, width, height, Color(r: 255, g: 0, b: 0))
+          anim.write(pixels)
   
   for k, v in map:
     result[0] += 1
@@ -63,9 +90,12 @@ proc run(origProgram: seq[int], startOn = Black): (int, string) =
     for x in 0 .. 40:
       if (x, y) in map:
           result[1] &= (if map[(x, y)] == White: '#' else: '.')
+          setPixel(pixels, x, y + 5, width, height, if map[(x, y)] == White: Color(r: 255, g: 255, b: 255) else: Color(r: 0, g: 0, b: 0))
       else:
         result[1] &= "."
+        setPixel(pixels, x, y + 5, width, height, Color(r: 0, g: 0, b: 0))
     result[1] &= '\n'
+  anim.write(pixels, delay = 2.0)
 
 when isMainModule:
   let inputPath = if paramCount() > 0: paramStr(1) else: "input.txt"
