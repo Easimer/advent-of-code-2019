@@ -1,2 +1,1 @@
-1246
-814
+{"output1":"1246","output2":"814","unitTime":"us","timePreprocess":52.0,"isTimeCombined":false,"timePart1":4521.0,"timePart2":217.0}

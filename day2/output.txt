@@ -1,2 +1,1 @@
-2782414
-(98, 20)
+{"output1":"2782414","output2":"(98, 20)","unitTime":"us","timePreprocess":67.0,"isTimeCombined":false,"timePart1":6.0,"timePart2":3896.0}

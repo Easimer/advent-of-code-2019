@@ -1,2 +1,1 @@
-207
-21196
+{"output1":"207","output2":"21196","unitTime":"us","timePreprocess":521.0,"isTimeCombined":true,"timePart1":2107.0,"timePart2":2107.0}
