@@ -70,3 +70,8 @@ proc readProgramFromPath*(path: string): Memory =
   defer: close(f)
   for k, v in f.readLine().split(',').map(x => parseInt(x)):
     result[k] = v
+
+func needsInput*(state: InterpreterResult, program: Memory): bool =
+  ## Returns a value indicating whether the VM will read input when
+  ## executeInstruction is executed.
+  decodeInstruction(fetch(program, 1, state.nextPC, 0, 0))[0] == IN
