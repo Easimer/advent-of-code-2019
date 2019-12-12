@@ -84,6 +84,9 @@ when isMainModule:
   for planet in planets:
     res += tot(planet)
 
+  # If axis 0 repeats after every 3 steps and axis 1 after every 4 steps,
+  # then both axes must repeat simultaneously on the 12th step (lcm(3, 4)).
+  # This holds also for three dimensions. Furthermore lcm(x, y, z) = lcm(lcm(x, y), z).
   let cycleX = cycle(initial, 0)
   let cycleY = cycle(initial, 1)
   let cycleZ = cycle(initial, 2)
