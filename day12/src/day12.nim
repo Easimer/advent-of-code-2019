@@ -3,6 +3,7 @@ import sets
 import sugar
 import sequtils
 import math
+import json
 
 type
   Planet = object
@@ -73,21 +74,18 @@ template cycle(planets: seq[Planet], dim: int): int =
 
 when isMainModule:
   var planets = readInput("input.txt")
-  echo(planets)
   let initial = planets
 
   for i in countup(0, 999):
     var newState = simulate(planets)
-    echo(i)
-    echo(planets)
     planets = newState
   
   var res = 0
   for planet in planets:
     res += tot(planet)
-  echo(res)
 
   let cycleX = cycle(initial, 0)
   let cycleY = cycle(initial, 1)
   let cycleZ = cycle(initial, 2)
-  echo(lcm(lcm(cycleX, cycleY), cycleZ))
+  let res2 = lcm(lcm(cycleX, cycleY), cycleZ)
+  echo(%*{"output1": res, "output2": res2})
