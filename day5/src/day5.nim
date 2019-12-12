@@ -1,13 +1,11 @@
 import options
 import os
-import sequtils
-import strutils
 import times
 
 import aocutils
 import aocutils/intcode
 
-func runProgram(inp: int, memory: seq[int]): int =
+func runProgram(inp: int, memory: Memory): int =
   ## Runs the program and returns the diagnostic code
   var ires: InterpreterResult
   var pc = 0

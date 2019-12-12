@@ -9,12 +9,12 @@ import aocutils/intcode
 type Amplifier = object
   phase: int
   pc: int
-  memory: seq[int]
+  memory: Memory
   consumedPhase: bool
   halted: bool
   output: int
 
-proc initAmp(phase: int, program: seq[int]): Amplifier =
+proc initAmp(phase: int, program: Memory): Amplifier =
   result.phase = phase
   result.memory = program
 
@@ -43,7 +43,7 @@ func chain(amps: var seq[Amplifier], input: int): int =
   for i in 0..4: result = amplifier(amps[i], result)
 
 type Work = object
-  program: seq[int]
+  program: Memory
   phasePermutations: seq[seq[int]]
 
 proc worker1(work: Work, first, last: int): int =
@@ -75,12 +75,12 @@ when isMainModule:
   let parseEnd = getTime()
 
   let part1Start = getTime()
-  let output1 = $max(distributeWork(worker1, Work(program: P, phasePermutations: toSeq(perm(toSeq(0..4)))), 0, 120))
+  let output1 = $system.max(distributeWork(worker1, Work(program: P, phasePermutations: toSeq(perm(toSeq(0..4)))), 0, 120))
   let part1End = getTime()
   let part2Start = getTime()
-  let output2 = $max(distributeWork(worker2, Work(program: P, phasePermutations: toSeq(perm(toSeq(5..9)))), 0, 120))
+  let output2 = $system.max(distributeWork(worker2, Work(program: P, phasePermutations: toSeq(perm(toSeq(5..9)))), 0, 120))
   let part2End = getTime()
 
   var R: AOCResults
   R.init(output1, output2, inMicroseconds(parseEnd - parseStart), inMicroseconds(part1End - part1Start), inMicroseconds(part2End - part2Start))
-  echo(R)
+  printResults(R)
