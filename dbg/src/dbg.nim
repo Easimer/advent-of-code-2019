@@ -44,6 +44,12 @@ func `strInstr`(pc: int, mem: Memory): string =
   if L > 2: result &= ' ' & strArg(instr[2], mem[pc + 2])
   if L > 3: result &= ' ' & strArg(instr[3], mem[pc + 3])
 
+func shouldBreakOnPC(pc: int, dbg: Debugger): bool =
+  for bp in dbg.breakpoints:
+    if bp.kind == Function and pc == bp.pc:
+      return true
+  return false
+
 proc debugProgram(origProg: Memory) =
   var program = origProg
   var state: InterpreterResult
@@ -56,8 +62,8 @@ proc debugProgram(origProg: Memory) =
   while not state.halt:
     let pcCur = state.nextPC
 
-    if SingleStep in dbg.flags:
-      stderr.write(strInstr(pcCur, program) & '\n')
+    if SingleStep in dbg.flags or shouldBreakOnPC(pcCur, dbg):
+      stderr.write(toHex(pcCur) & '\t' & strInstr(pcCur, program) & '\n')
 
       var step = false
       while not step:
@@ -67,7 +73,8 @@ proc debugProgram(origProg: Memory) =
           dbg.flags.incl(SingleStep)
           step = true
         else:
-          case line:
+          let cmd = line.split()
+          case cmd[0]:
             of "c":
               dbg.flags.excl(SingleStep)
               step = true
@@ -85,6 +92,21 @@ proc debugProgram(origProg: Memory) =
               resetDebugger(dbg)
               stderr.write("VM STATE RESET, DEBUGGER STATE UNCHANGED\n")
               stderr.write(strInstr(0, program) & '\n')
+            of "break":
+              if len(cmd) > 1:
+                try:
+                  var pc = 0
+                  if len(cmd[1]) > 1 and cmd[1][0] == '0' and cmd[1][1] == 'x':
+                    pc = fromHex[int](cmd[1])
+                  else:
+                    pc = parseInt(cmd[1])
+                  let bp = Breakpoint(kind: Function, pc: pc)
+                  dbg.breakpoints.add(bp)
+                  stderr.write("BREAKING WHEN PC=0x" & toHex(pc) & '\n')
+                except ValueError:
+                  stderr.write("CAN'T SET BREAKPOINT: BAD ARGUMENT\n")
+              else:
+                stderr.write("CAN'T SET BREAKPOINT: NO ARGUMENT\n")
 
     if needsInput(state, program) and (BreakOnInput in dbg.flags):
       var inputOk = false
