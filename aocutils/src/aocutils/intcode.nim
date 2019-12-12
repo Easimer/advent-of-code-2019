@@ -75,3 +75,5 @@ func needsInput*(state: InterpreterResult, program: Memory): bool =
   ## Returns a value indicating whether the VM will read input when
   ## executeInstruction is executed.
   decodeInstruction(fetch(program, 1, state.nextPC, 0, 0))[0] == IN
+
+func dbgFetch*(memory: Memory, mode: int, pc: int, offset: int, base: int): int = fetch(memory, mode, pc, offset, base)

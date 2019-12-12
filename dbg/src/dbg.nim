@@ -22,27 +22,84 @@ type
   Debugger = object
     flags: set[DebuggerFlag]
     breakpoints: seq[Breakpoint]
+    mem: Memory
+
+    state: InterpreterResult
     
 const DebuggerDefaultFlags = {SingleStep, BreakOnInput}
 
-func resetDebugger(dbg: var Debugger) =
+func resetDebugger(dbg: var Debugger, mem: Memory) =
   dbg.flags = DebuggerDefaultFlags
   dbg.breakpoints = @[]
+  dbg.mem = mem
 
-func strArg(mode, arg: int): string =
+func strArg(mode, arg, base: int): string =
   case mode:
     of 0: '[' & $arg & ']'
     of 1: $arg
-    of 2: '[' & $arg & " + rel]"
+    of 2: '[' & $arg & " + " & $base & "]"
     else: '?' & $arg & '?' & " mode = " & $mode
 
-func `strInstr`(pc: int, mem: Memory): string =
-  let instr = decodeInstruction(mem[pc])
+func detectIdiomMove(instr: DecodedInstruction, pc: int, dbg: Debugger, res: var string): bool =
+  case instr[0]:
+    of ADD:
+      let arg0 = dbgFetch(dbg.mem, instr[1], pc, 1, dbg.state.base)
+      let arg1 = dbgFetch(dbg.mem, instr[2], pc, 2, dbg.state.base)
+      if arg0 == 0:
+        res = "MOV " & strArg(instr[1], dbg.mem[pc + 1], dbg.state.base) & ", " & strArg(instr[3], dbg.mem[pc + 3], dbg.state.base)
+        return true
+      elif arg1 == 0:
+        res = "MOV " & strArg(instr[2], dbg.mem[pc + 2], dbg.state.base) & ", " & strArg(instr[3], dbg.mem[pc + 3], dbg.state.base)
+        return true
+    of MUL:
+      let arg0 = dbgFetch(dbg.mem, instr[1], pc, 1, dbg.state.base)
+      let arg1 = dbgFetch(dbg.mem, instr[2], pc, 2, dbg.state.base)
+      if arg0 == 1:
+        res = "MOV " & strArg(instr[1], dbg.mem[pc + 1], dbg.state.base) & ", " & strArg(instr[3], dbg.mem[pc + 3], dbg.state.base)
+        return true
+      elif arg1 == 1:
+        res = "MOV " & strArg(instr[2], dbg.mem[pc + 2], dbg.state.base) & ", " & strArg(instr[3], dbg.mem[pc + 3], dbg.state.base)
+        return true
+    else:
+      return false
+
+func detectIdiomUnconditionalJmp(instr: DecodedInstruction, pc: int, dbg: Debugger, res: var string): bool =
+  case instr[0]:
+    of JZ:
+      let arg0 = dbgFetch(dbg.mem, instr[1], pc, 1, dbg.state.base)
+      if arg0 == 0:
+        res = "JMP " & strArg(instr[2], dbg.mem[pc + 2], dbg.state.base)
+        return true
+    of JNZ:
+      let arg0 = dbgFetch(dbg.mem, instr[1], pc, 1, dbg.state.base)
+      if arg0 == 1:
+        res = "JMP " & strArg(instr[2], dbg.mem[pc + 2], dbg.state.base)
+        return true
+    else:
+      return false
+
+func detectIdiom(instr: DecodedInstruction, pc: int, dbg: Debugger, res: var string): bool =
+  if detectIdiomMove(instr, pc, dbg, res): return true
+  if detectIdiomUnconditionalJmp(instr, pc, dbg, res): return true
+
+func genericDisass(instr: DecodedInstruction, pc: int, dbg: Debugger): string =
   let L = len(instr[0])
   if L > 0: result &= $instr[0]
-  if L > 1: result &= ' ' & strArg(instr[1], mem[pc + 1])
-  if L > 2: result &= ' ' & strArg(instr[2], mem[pc + 2])
-  if L > 3: result &= ' ' & strArg(instr[3], mem[pc + 3])
+  if L > 1: result &= ' ' & strArg(instr[1], dbg.mem[pc + 1], dbg.state.base)
+  if L > 2: result &= ' ' & strArg(instr[2], dbg.mem[pc + 2], dbg.state.base)
+  if L > 3: result &= ' ' & strArg(instr[3], dbg.mem[pc + 3], dbg.state.base)
+
+  result &= "\t/* "
+  if L > 0: result &= $instr[0]
+  if L > 1: result &= ' ' & $dbgFetch(dbg.mem, instr[1], pc, 1, dbg.state.base)
+  if L > 2: result &= ' ' & $dbgFetch(dbg.mem, instr[2], pc, 2, dbg.state.base)
+  if L > 3: result &= ' ' & $dbgFetch(dbg.mem, instr[3], pc, 3, dbg.state.base)
+  result &= " */"
+
+func strInstr(pc: int, dbg: Debugger): string =
+  let instr = decodeInstruction(dbg.mem[pc])
+  if not detectIdiom(instr, pc, dbg, result):
+    result = genericDisass(instr, pc, dbg)
 
 func shouldBreakOnPC(pc: int, dbg: Debugger): bool =
   for bp in dbg.breakpoints:
@@ -51,19 +108,17 @@ func shouldBreakOnPC(pc: int, dbg: Debugger): bool =
   return false
 
 proc debugProgram(origProg: Memory) =
-  var program = origProg
-  var state: InterpreterResult
   var output: Option[int]
   var input = 0
   var dbg: Debugger
 
-  resetDebugger(dbg)
+  resetDebugger(dbg, origProg)
 
-  while not state.halt:
-    let pcCur = state.nextPC
+  while not dbg.state.halt:
+    let pcCur = dbg.state.nextPC
 
     if SingleStep in dbg.flags or shouldBreakOnPC(pcCur, dbg):
-      stderr.write(toHex(pcCur) & '\t' & strInstr(pcCur, program) & '\n')
+      stderr.write(toHex(pcCur) & '\t' & strInstr(pcCur, dbg) & '\n')
 
       var step = false
       while not step:
@@ -87,11 +142,10 @@ proc debugProgram(origProg: Memory) =
               else: dbg.flags.incl(BreakOnInput)
               stderr.write("BREAK ON INPUT = " & $(not bi) & '\n') 
             of "r":
-              state.nextPC = 0
-              program = origProg
-              resetDebugger(dbg)
+              dbg.state.nextPC = 0
+              resetDebugger(dbg, origProg)
               stderr.write("VM STATE RESET, DEBUGGER STATE UNCHANGED\n")
-              stderr.write(strInstr(0, program) & '\n')
+              stderr.write(strInstr(0, dbg) & '\n')
             of "break":
               if len(cmd) > 1:
                 try:
@@ -108,8 +162,9 @@ proc debugProgram(origProg: Memory) =
               else:
                 stderr.write("CAN'T SET BREAKPOINT: NO ARGUMENT\n")
 
-    if needsInput(state, program) and (BreakOnInput in dbg.flags):
+    if needsInput(dbg.state, dbg.mem) and (BreakOnInput in dbg.flags):
       var inputOk = false
+      dbg.flags.incl(SingleStep)
       while not inputOk:
         stderr.write("INPUT: ")
         let line = stdin.readLine()
@@ -119,9 +174,9 @@ proc debugProgram(origProg: Memory) =
         except ValueError:
           stderr.write("ERR\n")
 
-    state = executeInstruction(input, state.nextPC, program, state.base)
+    dbg.state = executeInstruction(input, dbg.state.nextPC, dbg.mem, dbg.state.base)
     
-    output = state.output
+    output = dbg.state.output
 
     if isSome(output):
       stderr.write("OUTPUT: " & $output.get() & '\n')
