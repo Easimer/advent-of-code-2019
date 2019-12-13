@@ -1,7 +1,8 @@
+import json
 import os
 import options
-import tables
 import sugar
+import tables
 import gifwriter
 import aocutils
 import aocutils/intcode
@@ -112,5 +113,4 @@ func part2(program: Memory): int =
 
 when isMainModule:
   let program = readProgramFromPath(if paramCount() > 0: paramStr(1) else: "input.txt")
-  echo part1(program)
-  echo part2(program)
+  echo(%*{"output1": $part1(program), "output2": $part2(program)})
