@@ -12,5 +12,5 @@ bin           = @["day13.exe"]
 # Dependencies
 
 requires "nim >= 1.0.0"
-requires "aocutils >= 0.4.0"
+requires "aocutils >= 0.4.2"
 requires "gifwriter >= 0.1.0"

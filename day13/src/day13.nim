@@ -6,13 +6,14 @@ import tables
 import gifwriter
 import aocutils
 import aocutils/intcode
+import aocutils/vis
 
 type
   VMState = enum OutX, OutY, OutT
   Tile = enum Empty = 0, Wall = 1, Block = 2, Paddle = 3, Ball = 4
   Point = tuple[x, y: int]
 
-const BOARDSIZ = 64
+const BOARDSIZ = 48
 
 func `+`(lhs: VMState, rhs: int): VMState =
   assert rhs == 1
@@ -21,19 +22,19 @@ func `+`(lhs: VMState, rhs: int): VMState =
     of OutY: OutT
     of OutT: OutX
 
-proc renderBoard(g: Gif, board: seq[Tile], width: int) =
-  var pixels = newSeq[Color](width * width)
-
+proc renderBoard(a: var Anim, board: seq[Tile], width: int) =
   for y in 0 .. width - 1:
     for x in 0 .. width - 1:
-      pixels[y * width + x] =
+      
+      let c =
         case board[y * width + x]:
           of Empty: Color(r: 0, g: 0, b: 0)
           of Wall: Color(r: 255, g: 255, b: 255)
           of Block: Color(r: 127, g: 127, b: 127)
           of Paddle: Color(r: 0, g: 255, b: 0)
           of Ball: Color(r: 255, g: 0, b: 0)
-  g.write(pixels)
+      setPixel(a, x, y, c)
+  step(a)
 
 func part1(program: Memory): int =
   var state: InterpreterResult
@@ -68,11 +69,11 @@ func part2(program: Memory): int =
   var buf, paddle, ball, ballDelta: Point
   var pixels = newSeq[Tile](BOARDSIZ * BOARDSIZ)
   var input = 0
-  var g = newGif("output.gif", BOARDSIZ, BOARDSIZ, colors = 8, fps = 30)
-  defer: close(g)
+  var a = newAnim("output.gif", BOARDSIZ, BOARDSIZ, scale = 4, colors = 8, fps = 60)
+  defer: close(a)
 
   mem[0] = 2
-  renderBoard(g, pixels, BOARDSIZ)
+  renderBoard(a, pixels, BOARDSIZ)
 
   while not state.halt:
     state = executeInstruction(input, state.nextPC, mem, state.base)
@@ -91,13 +92,13 @@ func part2(program: Memory): int =
             if t == Paddle:
               paddle.x = buf.x
               paddle.y = buf.y
-              renderBoard(g, pixels, BOARDSIZ)
+              renderBoard(a, pixels, BOARDSIZ)
             elif t == Ball:
               ballDelta.x = buf.x - ball.x
               ballDelta.y = buf.y - ball.y
               ball.x = buf.x
               ball.y = buf.y
-              renderBoard(g, pixels, BOARDSIZ)
+              renderBoard(a, pixels, BOARDSIZ)
           else:
             result = o
       ioState = ioState + 1
