@@ -1,7 +1,9 @@
 import os
 import options
 import tables
+import sugar
 import gifwriter
+import aocutils
 import aocutils/intcode
 
 type
@@ -96,40 +98,16 @@ func part2(program: Memory): int =
               ball.y = buf.y
               renderBoard(g, pixels, BOARDSIZ)
           else:
-            debugEcho(o)
             result = o
       ioState = ioState + 1
 
-    #[
-      b.x + t * d.x = f.x
-      b.y + t * d.y = paddle.y
-      t = (paddle.y - b.y) / d.y
-    ]#
-
-    if ballDelta.y > 0:
-      input =
+    input =
         if paddle.x < ball.x: 1
         elif ball.x < paddle.x: -1
         else: 0
-    elif ballDelta.y < 0:
-      var coll: Point = ball
-      while pixels[coll.y * BOARDSIZ + coll.x] == Empty:
-        coll.y += ballDelta.y
-        coll.x += ballDelta.x
-      
-      var futureDelta: Point
-      futureDelta.x = ballDelta.x
-      futureDelta.y = -ballDelta.y
-
-      let t = (paddle.y - coll.y) / futureDelta.y
-      let fx = float(coll.x) + t * float(futureDelta.x)
-      let px = float(paddle.x)
-      input =
-        if px < fx: 1
-        elif fx < px: -1
-        else: 0
-    else:
-      input = 0
+  
+  let blockCount = count(pixels, pix => pix == Block)
+  assert blockCount == 0
 
 
 when isMainModule:
