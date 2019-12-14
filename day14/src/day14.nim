@@ -5,19 +5,24 @@ import tables
 import strutils
 import sequtils
 import sugar
+import hashes
+
+const ORE = hash("ORE")
+const FUEL = hash("FUEL")
 
 type
-  Ingredient = tuple[name: string, quantity: int]
+  Name = Hash
+  Ingredient = tuple[name: Name, quantity: int64]
   Recipe = object
-    producedCount: int
+    producedCount: int64
     ingredients: seq[Ingredient]
-  Recipes = Table[string, Recipe]
-  Storage = Table[string, int]
+  Recipes = Table[Name, Recipe]
+  Storage = Table[Name, int64]
 
 func newIngredient(s: string): Ingredient =
   let c = s.split(' ')
   result.quantity = parseInt(c[0])
-  result.name = c[1]
+  result.name = hash(c[1])
 
 proc loadRecipes(path: string): Recipes =
   var f = open(path)
@@ -31,19 +36,16 @@ proc loadRecipes(path: string): Recipes =
     let recipe = Recipe(producedCount: produce.quantity, ingredients: ingredients)
     result.add(produce.name, recipe)
 
-func manufacture(recipes: Recipes, storage: Storage, qty: int, name: string): Storage =
+func manufacture(recipes: Recipes, result: var Storage, qty: int64, name: Name) =
   let R = recipes[name]
-  debugEcho("Want " & $qty & " pieces of " & name)
   let makeRecipeCount =
       if qty mod R.producedCount != 0:
         (1 + qty div R.producedCount)
       else:
         qty div R.producedCount
-  debugEcho("Need to make recipe " & $makeRecipeCount & " times to make " & $qty & " pieces of " & name)
-  result = storage
   for ingr in R.ingredients:
-    if ingr.name == "ORE":
-      result["ORE"] -= ingr.quantity * makeRecipeCount
+    if ingr.name == ORE:
+      result[ORE] -= ingr.quantity * makeRecipeCount
     else:
       let leftover =
         if ingr.name in result:
@@ -56,23 +58,43 @@ func manufacture(recipes: Recipes, storage: Storage, qty: int, name: string): St
           else:
             0
       if needToManufactureIngredient > 0:
-        result = manufacture(recipes, result, needToManufactureIngredient, ingr.name)
+        manufacture(recipes, result, needToManufactureIngredient, ingr.name)
       result[ingr.name] -= ingr.quantity * makeRecipeCount
       assert result[ingr.name] >= 0
-  if name in result:
-    result[name] += makeRecipeCount * R.producedCount
-  else:
-    result[name] = makeRecipeCount * R.producedCount
+  let C = result.getOrDefault(name, 0) + makeRecipeCount * R.producedCount
+  result[name] = C
 
-proc part1(recipes: Recipes): int =
+func part1(recipes: Recipes): int64 =
   var has: Storage
-  has["ORE"] = 0
-  has = manufacture(recipes, has, 1, "FUEL")
-  debugEcho(has)
-  -has["ORE"]
+  has[ORE] = 0
+  manufacture(recipes, has, 1, FUEL)
+  -has[ORE]
 
-proc part2(recipes: Recipes): int = 0
+func part2(recipes: Recipes): int64 =
+  var S: Storage
+  var guess = 1000000000000 div 2
+  var sign = false
+  var step = 100000000
 
+  while step > 0:
+    for R, v in recipes:
+      S[R] = 0
+    S[ORE] = 1000000000000
+
+    manufacture(recipes, S, guess, FUEL)
+
+    if S[ORE] < 0:
+      if sign != false:
+        step = step div 10
+        sign = false
+      guess -= step
+    elif S[ORE] > 0:
+      if sign != true:
+        step = step div 10
+        sign = true
+      guess += step
+  guess
 when isMainModule:
   let recipes = loadRecipes(if paramCount() > 0: paramStr(1) else: "input.txt")
   echo(part1(recipes))
+  echo(part2(recipes))
