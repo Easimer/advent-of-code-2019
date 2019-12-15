@@ -4,99 +4,12 @@ import strutils
 import tables
 import aocutils/intcode
 import aocutils/intcode/internal
+import dbg/common
+import dbg/idiom
 
-type
-  BreakpointKind = enum Function, Data
-  Breakpoint = object
-    case kind: BreakpointKind
-      of Function:
-        pc: int
-      of Data:
-        address: int
-        read, write: bool
-  
-  DebuggerFlag {.size: sizeof(cint).} = enum
-    SingleStep,
-    BreakOnInput,
+func genericDisass(instr: DecodedInstruction, pc: int, dbg: Debugger): string = disassemble(instr, pc, dbg) & '\t' & annotation(instr, pc, dbg)
 
-  Debugger = object
-    flags: set[DebuggerFlag]
-    breakpoints: seq[Breakpoint]
-    mem: Memory
-
-    state: InterpreterResult
-    
-const DebuggerDefaultFlags = {SingleStep, BreakOnInput}
-
-func resetDebugger(dbg: var Debugger, mem: Memory) =
-  dbg.flags = DebuggerDefaultFlags
-  dbg.breakpoints = @[]
-  dbg.mem = mem
-
-func strArg(mode, arg, base: int): string =
-  case mode:
-    of 0: '[' & $arg & ']'
-    of 1: $arg
-    of 2: '[' & $arg & " + " & $base & "]"
-    else: '?' & $arg & '?' & " mode = " & $mode
-
-func detectIdiomMove(instr: DecodedInstruction, pc: int, dbg: Debugger, res: var string): bool =
-  case instr[0]:
-    of ADD:
-      let arg0 = dbgFetch(dbg.mem, instr[1], pc, 1, dbg.state.base)
-      let arg1 = dbgFetch(dbg.mem, instr[2], pc, 2, dbg.state.base)
-      if arg0 == 0:
-        res = "MOV " & strArg(instr[1], dbg.mem[pc + 1], dbg.state.base) & ", " & strArg(instr[3], dbg.mem[pc + 3], dbg.state.base)
-        return true
-      elif arg1 == 0:
-        res = "MOV " & strArg(instr[2], dbg.mem[pc + 2], dbg.state.base) & ", " & strArg(instr[3], dbg.mem[pc + 3], dbg.state.base)
-        return true
-    of MUL:
-      let arg0 = dbgFetch(dbg.mem, instr[1], pc, 1, dbg.state.base)
-      let arg1 = dbgFetch(dbg.mem, instr[2], pc, 2, dbg.state.base)
-      if arg0 == 1:
-        res = "MOV " & strArg(instr[1], dbg.mem[pc + 1], dbg.state.base) & ", " & strArg(instr[3], dbg.mem[pc + 3], dbg.state.base)
-        return true
-      elif arg1 == 1:
-        res = "MOV " & strArg(instr[2], dbg.mem[pc + 2], dbg.state.base) & ", " & strArg(instr[3], dbg.mem[pc + 3], dbg.state.base)
-        return true
-    else:
-      return false
-
-func detectIdiomUnconditionalJmp(instr: DecodedInstruction, pc: int, dbg: Debugger, res: var string): bool =
-  case instr[0]:
-    of JZ:
-      let arg0 = dbgFetch(dbg.mem, instr[1], pc, 1, dbg.state.base)
-      if arg0 == 0:
-        res = "JMP " & strArg(instr[2], dbg.mem[pc + 2], dbg.state.base)
-        return true
-    of JNZ:
-      let arg0 = dbgFetch(dbg.mem, instr[1], pc, 1, dbg.state.base)
-      if arg0 == 1:
-        res = "JMP " & strArg(instr[2], dbg.mem[pc + 2], dbg.state.base)
-        return true
-    else:
-      return false
-
-func detectIdiom(instr: DecodedInstruction, pc: int, dbg: Debugger, res: var string): bool =
-  if detectIdiomMove(instr, pc, dbg, res): return true
-  if detectIdiomUnconditionalJmp(instr, pc, dbg, res): return true
-
-func genericDisass(instr: DecodedInstruction, pc: int, dbg: Debugger): string =
-  let L = len(instr[0])
-  if L > 0: result &= $instr[0]
-  if L > 1: result &= ' ' & strArg(instr[1], dbg.mem[pc + 1], dbg.state.base)
-  if L > 2: result &= ' ' & strArg(instr[2], dbg.mem[pc + 2], dbg.state.base)
-  if L > 3: result &= ' ' & strArg(instr[3], dbg.mem[pc + 3], dbg.state.base)
-
-  result &= "\t/* "
-  if L > 0: result &= $instr[0]
-  if L > 1: result &= ' ' & $dbgFetch(dbg.mem, instr[1], pc, 1, dbg.state.base)
-  if L > 2: result &= ' ' & $dbgFetch(dbg.mem, instr[2], pc, 2, dbg.state.base)
-  if L > 3: result &= ' ' & $dbgFetch(dbg.mem, instr[3], pc, 3, dbg.state.base)
-  result &= " */"
-
-func strInstr(pc: int, dbg: Debugger): string =
+func strInstr*(pc: int, dbg: Debugger): string =
   let instr = decodeInstruction(dbg.mem[pc])
   if not detectIdiom(instr, pc, dbg, result):
     result = genericDisass(instr, pc, dbg)
